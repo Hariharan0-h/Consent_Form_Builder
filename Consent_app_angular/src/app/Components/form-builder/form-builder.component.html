@@ -1,1 +1,171 @@
-<p>form-builder works!</p>
+<div class="form-builder-container">
+    <div class="navigation-controls">
+      <button class="nav-button" [routerLink]="['/patients']">View Patients</button>
+    </div>
+    
+    <div class="form-builder-content">
+      <div class="toolbar">
+        <div class="toolbar-section formatting">
+          <button class="toolbar-button" [class.active]="textFormatting.bold" (click)="toggleFormat('bold')">
+            <span class="icon bold-icon">B</span>
+          </button>
+          <button class="toolbar-button" [class.active]="textFormatting.italic" (click)="toggleFormat('italic')">
+            <span class="icon italic-icon">I</span>
+          </button>
+          <button class="toolbar-button" [class.active]="textFormatting.underline" (click)="toggleFormat('underline')">
+            <span class="icon underline-icon">U</span>
+          </button>
+          <div class="toolbar-separator"></div>
+          <div class="dropdown">
+            <button class="toolbar-button dropdown-toggle">
+              <span class="current-font">{{ selectedFont }}</span>
+            </button>
+            <div class="dropdown-content">
+              <div class="dropdown-item" *ngFor="let font of availableFonts" (click)="selectFont(font)">{{ font }}</div>
+            </div>
+          </div>
+          <div class="dropdown">
+            <button class="toolbar-button dropdown-toggle">
+              <span class="current-size">{{ selectedFontSize }}</span>
+            </button>
+            <div class="dropdown-content">
+              <div class="dropdown-item" *ngFor="let size of fontSizes" (click)="selectFontSize(size)">{{ size }}</div>
+            </div>
+          </div>
+          <div class="toolbar-separator"></div>
+          <button class="toolbar-button" [class.active]="textAlignment === 'left'" (click)="setAlignment('left')">
+            <span class="icon align-left-icon">⟨</span>
+          </button>
+          <button class="toolbar-button" [class.active]="textAlignment === 'center'" (click)="setAlignment('center')">
+            <span class="icon align-center-icon">⟺</span>
+          </button>
+          <button class="toolbar-button" [class.active]="textAlignment === 'right'" (click)="setAlignment('right')">
+            <span class="icon align-right-icon">⟩</span>
+          </button>
+          <button class="toolbar-button" [class.active]="textAlignment === 'justify'" (click)="setAlignment('justify')">
+            <span class="icon align-justify-icon">≡</span>
+          </button>
+        </div>
+        <div class="toolbar-separator vertical"></div>
+        <div class="toolbar-section colors">
+          <div class="color-picker">
+            <span class="color-label">Text:</span>
+            <input type="color" [(ngModel)]="textColor" (change)="applyTextColor()">
+          </div>
+          <div class="color-picker">
+            <span class="color-label">Highlight:</span>
+            <input type="color" [(ngModel)]="highlightColor" (change)="applyHighlightColor()">
+          </div>
+        </div>
+      </div>
+  
+      <div class="sidebar">
+        <div class="sidebar-title">Insert</div>
+        <div class="sidebar-items">
+          <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'text')">
+            <span class="sidebar-icon">T</span>
+            <span class="sidebar-label">Text</span>
+          </div>
+          <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'image')">
+            <span class="sidebar-icon">📷</span>
+            <span class="sidebar-label">Image</span>
+          </div>
+          <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'table')">
+            <span class="sidebar-icon">⊞</span>
+            <span class="sidebar-label">Table</span>
+          </div>
+          <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'shape')">
+            <span class="sidebar-icon">◯</span>
+            <span class="sidebar-label">Shape</span>
+          </div>
+          <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'horizontalLine')">
+            <span class="sidebar-icon">―</span>
+            <span class="sidebar-label">Horizontal Line</span>
+          </div>
+          <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'pageBreak')">
+            <span class="sidebar-icon">↲</span>
+            <span class="sidebar-label">Page Break</span>
+          </div>
+        </div>
+      </div>
+  
+      <div class="document-area">
+        <div class="document-page" *ngFor="let page of pages; let i = index" [attr.data-page]="i + 1">
+          <div class="page-content" 
+               (dragover)="allowDrop($event)" 
+               (drop)="onDrop($event, i)"
+               [attr.contenteditable]="true">
+            <!-- Page content will be dynamically added here -->
+            <ng-container *ngFor="let element of page.elements">
+              <div class="form-element" 
+                   [attr.data-type]="element.type" 
+                   [style.left.px]="element.x" 
+                   [style.top.px]="element.y"
+                   [style.width.px]="element.width || 'auto'"
+                   [style.height.px]="element.height || 'auto'"
+                   (mousedown)="startDrag($event, element)">
+                
+                <!-- Text element -->
+                <div *ngIf="element.type === 'text'" 
+                     class="text-element" 
+                     [attr.contenteditable]="true"
+                     [innerHTML]="element.content"></div>
+                
+                <!-- Image element -->
+                <img *ngIf="element.type === 'image'" 
+                     [src]="element.src" 
+                     [alt]="element.alt || 'Image'"
+                     class="image-element">
+                
+                <!-- Table element -->
+                <table *ngIf="element.type === 'table'" class="table-element">
+                  <tr *ngFor="let row of element.rows">
+                    <td *ngFor="let cell of row" [attr.contenteditable]="true">{{ cell.content }}</td>
+                  </tr>
+                </table>
+                
+                <!-- Shape element -->
+                <div *ngIf="element.type === 'shape'" 
+                     class="shape-element"
+                     [ngClass]="element.shape">
+                </div>
+                
+                <!-- Horizontal Line element -->
+                <div *ngIf="element.type === 'horizontalLine'" class="horizontal-line-element">
+                </div>
+                
+                <!-- Page break element -->
+                <div *ngIf="element.type === 'pageBreak'" class="page-break-element">
+                  <div class="page-break-line"></div>
+                  <div class="page-break-text">Page Break</div>
+                </div>
+                
+                <!-- Element controls -->
+                <div class="element-controls">
+                  <button class="control-button delete" (click)="deleteElement(i, element)">✕</button>
+                  <button class="control-button resize" (mousedown)="startResize($event, element)">↘</button>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+  
+      <div class="page-controls">
+        <button class="page-control-button" (click)="addNewPage()">Add Page</button>
+        <div class="page-indicators">
+          <span *ngFor="let page of pages; let i = index" 
+                class="page-indicator" 
+                [class.active]="currentPage === i"
+                (click)="goToPage(i)">
+            {{ i + 1 }}
+          </span>
+        </div>
+      </div>
+  
+      <div class="export-controls">
+        <button class="export-button" (click)="exportToPdf()">Export to PDF</button>
+        <button class="save-button" (click)="saveForm()">Save Form</button>
+      </div>
+    </div>
+  </div>

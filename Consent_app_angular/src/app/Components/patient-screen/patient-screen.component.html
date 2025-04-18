@@ -1,1 +1,16 @@
-<p>patient-screen works!</p>
+<div class="container">
+    <h1>Patient List</h1>
+    <div class="patient-cards">
+      <div class="patient-card" *ngFor="let patient of patients">
+        <div class="card-header">
+          <h2>{{ patient.name }}</h2>
+        </div>
+        <div class="card-body">
+          <p><strong>Age:</strong> {{ patient.age }}</p>
+          <p><strong>Address:</strong> {{ patient.address }}</p>
+          <p><strong>Surgery:</strong> {{ patient.surgery }}</p>
+          <p><strong>Date:</strong> {{ patient.date | date:'mediumDate' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
