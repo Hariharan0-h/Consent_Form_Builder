@@ -160,6 +160,19 @@ export class FormBuilderComponent implements OnInit {
     const newElement = this.createNewElement(elementType, x, y);
     if (newElement) {
       this.pages[pageIndex].elements.push(newElement);
+      
+      // Give Angular time to render the new element
+      setTimeout(() => {
+        // Find the newly added element in the DOM
+        const pageElement = document.querySelector(`[data-page="${pageIndex + 1}"]`);
+        if (pageElement) {
+          const newElementDOM = pageElement.querySelector(`.form-element:last-child`);
+          if (newElementDOM) {
+            // Add data-id attribute to the element for easier identification
+            newElementDOM.setAttribute('data-id', newElement.id);
+          }
+        }
+      }, 0);
     }
   }
 
@@ -384,6 +397,60 @@ export class FormBuilderComponent implements OnInit {
     }
   }
 
+  // Update element content from DOM to model
+  private updateElementsContentFromDOM(): void {
+    this.pages.forEach((page, pageIndex) => {
+      const pageElement = document.querySelector(`[data-page="${pageIndex + 1}"]`);
+      if (!pageElement) return;
+
+      page.elements.forEach(element => {
+        // Find the element by ID - this is much more reliable
+        const elementDOM = pageElement.querySelector(`.form-element[data-id="${element.id}"]`);
+        
+        if (elementDOM) {
+          // For text elements, update content from DOM
+          if (element.type === 'text') {
+            const textElement = elementDOM.querySelector('.text-element');
+            if (textElement) {
+              element.content = textElement.innerHTML;
+            }
+          }
+          
+          // For table elements, update cell content
+          else if (element.type === 'table' && element.rows) {
+            const tableCells = elementDOM.querySelectorAll('td');
+            let cellIndex = 0;
+            
+            for (let i = 0; i < element.rows.length; i++) {
+              for (let j = 0; j < element.rows[i].length; j++) {
+                if (cellIndex < tableCells.length) {
+                  element.rows[i][j].content = tableCells[cellIndex].innerHTML;
+                  cellIndex++;
+                }
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+  
+  // Update text content on blur event
+  updateTextContent(event: FocusEvent, pageIndex: number, element: FormElement): void {
+    if (event.target) {
+      const content = (event.target as HTMLElement).innerHTML;
+      element.content = content;
+    }
+  }
+  
+  // Update table cell content on blur event
+  updateTableCell(event: FocusEvent, pageIndex: number, element: FormElement, rowIndex: number, cellIndex: number): void {
+    if (event.target && element.rows && element.rows[rowIndex] && element.rows[rowIndex][cellIndex]) {
+      const content = (event.target as HTMLElement).innerHTML;
+      element.rows[rowIndex][cellIndex].content = content;
+    }
+  }
+
   // Export the form to PDF
   async exportToPdf(): Promise<void> {
     // Create a new PDF document
@@ -393,187 +460,53 @@ export class FormBuilderComponent implements OnInit {
       format: 'letter' // 8.5x11 inches
     });
     
-    // Create a working copy of pages to avoid modifying the original structure
-    const workingPages = JSON.parse(JSON.stringify(this.pages));
-    
-    // Function to handle page breaks
-    const processPageBreaks = (pages: FormPage[]): FormPage[] => {
-      let processedPages: FormPage[] = [];
-      
-      // Process each page individually
-      for (let i = 0; i < pages.length; i++) {
-        const page = pages[i];
-        const pageBreaks = page.elements.filter(el => el.type === 'pageBreak');
-        
-        if (pageBreaks.length === 0) {
-          // No page breaks, include page as is
-          processedPages.push(page);
-          continue;
-        }
-        
-        // Sort page breaks by Y position
-        pageBreaks.sort((a, b) => a.y - b.y);
-        
-        // First section (before first page break)
-        const firstPageElements = page.elements.filter(el => 
-          el.type !== 'pageBreak' && el.y < pageBreaks[0].y
-        );
-        
-        if (firstPageElements.length > 0) {
-          processedPages.push({
-            id: this.generateId('page'),
-            elements: firstPageElements
-          });
-        }
-        
-        // Middle sections (between page breaks)
-        for (let j = 0; j < pageBreaks.length - 1; j++) {
-          const currentBreak = pageBreaks[j];
-          const nextBreak = pageBreaks[j + 1];
-          
-          const sectionElements = page.elements.filter(el =>
-            el.type !== 'pageBreak' && 
-            el.y >= currentBreak.y && 
-            el.y < nextBreak.y
-          ).map(el => ({
-            ...el,
-            y: el.y - currentBreak.y // Adjust Y position for new page
-          }));
-          
-          if (sectionElements.length > 0) {
-            processedPages.push({
-              id: this.generateId('page'),
-              elements: sectionElements
-            });
-          }
-        }
-        
-        // Last section (after last page break)
-        const lastBreak = pageBreaks[pageBreaks.length - 1];
-        const lastSectionElements = page.elements.filter(el =>
-          el.type !== 'pageBreak' && el.y >= lastBreak.y
-        ).map(el => ({
-          ...el,
-          y: el.y - lastBreak.y // Adjust Y position for new page
-        }));
-        
-        if (lastSectionElements.length > 0) {
-          processedPages.push({
-            id: this.generateId('page'),
-            elements: lastSectionElements
-          });
-        }
-      }
-      
-      return processedPages;
-    };
-    
-    // Process page breaks and get the new page structure
-    const pagesToRender = processPageBreaks(workingPages);
-    
-    // Create a temporary container for rendering pages
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.top = '-9999px';
-    document.body.appendChild(tempContainer);
+    // Instead of trying to update the model and then re-render to a temp container,
+    // directly use the actual DOM elements for PDF generation
+    const pages = document.querySelectorAll('.document-page');
+    if (!pages.length) {
+      alert('No pages found to export.');
+      return;
+    }
     
     try {
-      // Render and capture each page
-      for (let i = 0; i < pagesToRender.length; i++) {
-        const page = pagesToRender[i];
+      // Process each page directly from DOM
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i] as HTMLElement;
         
-        // Create a temporary page element
-        const tempPage = document.createElement('div');
-        tempPage.className = 'document-page temp-page';
-        tempPage.style.width = '816px';
-        tempPage.style.height = '1056px';
-        tempPage.style.position = 'relative';
-        tempPage.style.backgroundColor = 'white';
+        // We need to make a clone of the page to avoid modifying the actual DOM
+        const clonedPage = page.cloneNode(true) as HTMLElement;
         
-        // Create page content container
-        const pageContent = document.createElement('div');
-        pageContent.className = 'page-content';
-        pageContent.style.padding = '72px';
-        pageContent.style.position = 'relative';
+        // Apply styling to ensure proper rendering
+        clonedPage.style.width = '816px'; // Letter width in pixels
+        clonedPage.style.height = '1056px'; // Letter height in pixels
+        clonedPage.style.position = 'absolute';
+        clonedPage.style.left = '-9999px';
+        clonedPage.style.top = '-9999px';
+        clonedPage.style.backgroundColor = 'white';
         
-        // Render each element in the page
-        for (const element of page.elements) {
-          const elementDiv = document.createElement('div');
-          elementDiv.className = 'form-element';
-          elementDiv.style.position = 'absolute';
-          elementDiv.style.left = `${element.x}px`;
-          elementDiv.style.top = `${element.y}px`;
-          elementDiv.style.width = element.width ? `${element.width}px` : 'auto';
-          elementDiv.style.height = element.height ? `${element.height}px` : 'auto';
-          
-          // Create content based on element type
-          switch (element.type) {
-            case 'text':
-              elementDiv.innerHTML = element.content || '';
-              break;
-              
-            case 'image':
-              const img = document.createElement('img');
-              img.src = element.src || '';
-              img.alt = element.alt || 'Image';
-              img.style.maxWidth = '100%';
-              img.style.maxHeight = '100%';
-              elementDiv.appendChild(img);
-              break;
-              
-            case 'table':
-              const table = document.createElement('table');
-              table.style.width = '100%';
-              table.style.borderCollapse = 'collapse';
-              
-              if (element.rows) {
-                for (const row of element.rows) {
-                  const tr = document.createElement('tr');
-                  for (const cell of row) {
-                    const td = document.createElement('td');
-                    td.style.border = '1px solid #ddd';
-                    td.style.padding = '8px';
-                    td.textContent = cell.content || '';
-                    tr.appendChild(td);
-                  }
-                  table.appendChild(tr);
-                }
-              }
-              elementDiv.appendChild(table);
-              break;
-              
-            case 'shape':
-              const shape = document.createElement('div');
-              shape.style.width = '100%';
-              shape.style.height = '100%';
-              
-              if (element.shape === 'circle') {
-                shape.style.borderRadius = '50%';
-              }
-              
-              shape.style.backgroundColor = 'rgba(200, 200, 200, 0.2)';
-              shape.style.border = '1px solid #ccc';
-              elementDiv.appendChild(shape);
-              break;
-              
-            case 'horizontalLine':
-              const line = document.createElement('div');
-              line.style.width = '100%';
-              line.style.height = '2px';
-              line.style.backgroundColor = '#333';
-              elementDiv.appendChild(line);
-              break;
-          }
-          
-          pageContent.appendChild(elementDiv);
-        }
+        // Remove any unnecessary elements that shouldn't appear in PDF
+        const controlsToRemove = clonedPage.querySelectorAll('.element-controls');
+        controlsToRemove.forEach(control => control.remove());
         
-        tempPage.appendChild(pageContent);
-        tempContainer.appendChild(tempPage);
+        // Ensure text elements maintain their content
+        const textElements = clonedPage.querySelectorAll('.text-element');
+        textElements.forEach(textEl => {
+          // Make sure contenteditable is off for export
+          (textEl as HTMLElement).setAttribute('contenteditable', 'false');
+        });
         
-        // Generate canvas from page
-        const canvas = await html2canvas(tempPage, {
+        // Ensure table cells maintain their content
+        const tableCells = clonedPage.querySelectorAll('td[contenteditable="true"]');
+        tableCells.forEach(cell => {
+          // Turn off contenteditable for export
+          (cell as HTMLElement).setAttribute('contenteditable', 'false');
+        });
+        
+        // Add to body temporarily for rendering
+        document.body.appendChild(clonedPage);
+        
+        // Generate canvas from the actual DOM page
+        const canvas = await html2canvas(clonedPage, {
           scale: 2, // Higher quality
           useCORS: true,
           logging: false,
@@ -590,20 +523,27 @@ export class FormBuilderComponent implements OnInit {
         // Add the image to fill the page
         pdf.addImage(imgData, 'PNG', 0, 0, 612, 792); // Letter size in points (72dpi)
         
-        // Clear the temporary page
-        tempContainer.removeChild(tempPage);
+        // Remove the cloned page from DOM
+        document.body.removeChild(clonedPage);
       }
-    } finally {
-      // Clean up
-      document.body.removeChild(tempContainer);
+      
+      // Save the PDF
+      pdf.save('form-document.pdf');
+      
+      // After exporting, sync the DOM content back to our model for saving
+      this.updateElementsContentFromDOM();
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('There was an error generating the PDF. Please try again.');
     }
-    
-    // Save the PDF
-    pdf.save('form-document.pdf');
   }
 
   // Save the form state
   saveForm(): void {
+    // First update content from DOM
+    this.updateElementsContentFromDOM();
+    
     const formData = {
       pages: this.pages,
       lastUpdated: new Date().toISOString()
