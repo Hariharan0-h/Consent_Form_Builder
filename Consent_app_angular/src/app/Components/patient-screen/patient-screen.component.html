@@ -1,16 +1,46 @@
 <div class="container">
-    <h1>Patient List</h1>
-    <div class="patient-cards">
-      <div class="patient-card" *ngFor="let patient of patients">
-        <div class="card-header">
-          <h2>{{ patient.name }}</h2>
+  <h1>Patient List</h1>
+  <div class="patient-cards">
+    <div class="patient-card" *ngFor="let patient of patients" (click)="selectPatient(patient)">
+      <div class="card-header">
+        <h2>{{ patient.name }}</h2>
+      </div>
+      <div class="card-body">
+        <p><strong>Age:</strong> {{ patient.age }}</p>
+        <p><strong>Address:</strong> {{ patient.address }}</p>
+        <p><strong>Surgery:</strong> {{ patient.surgery }}</p>
+        <p><strong>Date:</strong> {{ patient.date | date:'mediumDate' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal popup -->
+  <div class="modal-backdrop" *ngIf="showModal"></div>
+  <div class="modal" *ngIf="showModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Patient Details</h2>
+        <button class="close-btn" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Loading indicator -->
+        <div *ngIf="isLoading" class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Loading form...</p>
         </div>
-        <div class="card-body">
-          <p><strong>Age:</strong> {{ patient.age }}</p>
-          <p><strong>Address:</strong> {{ patient.address }}</p>
-          <p><strong>Surgery:</strong> {{ patient.surgery }}</p>
-          <p><strong>Date:</strong> {{ patient.date | date:'mediumDate' }}</p>
+
+        <!-- API error state -->
+        <div *ngIf="apiError" class="api-error">
+          <h3>Error Loading Form</h3>
+          <p>We couldn't load the form template from https://localhost:7073/api/models/1. Please ensure the API server is running.</p>
+          <button (click)="closeModal()" class="cancel-btn">Close</button>
+        </div>
+        
+        <!-- Dynamically loaded HTML from API -->
+        <div #modalContainer *ngIf="!isLoading && !apiError" [innerHTML]="modalHtml">
+          <!-- The content here will be replaced by HTML from the API -->
         </div>
       </div>
     </div>
   </div>
+</div>
