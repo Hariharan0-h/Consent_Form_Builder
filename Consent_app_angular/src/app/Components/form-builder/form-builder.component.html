@@ -1,52 +1,77 @@
 <div class="form-builder-container">
   <div class="navigation-controls">
-    <button class="nav-button" [routerLink]="['/patients']">View Patients</button>
+    <button class="nav-button" [routerLink]="['/patients']">
+      <i class="fa fa-arrow-left"></i> Back to Patients
+    </button>
   </div>
   
   <div class="form-builder-content">
+    <div class="form-header">
+      <input type="text" class="form-name-input" [(ngModel)]="formName" placeholder="Enter document name">
+    </div>
+
+    <!-- Improved Word-like ribbon toolbar -->
     <div class="toolbar">
       <div class="toolbar-section formatting">
-        <button class="toolbar-button" [class.active]="textFormatting.bold" (click)="toggleFormat('bold')">
+        <button class="toolbar-button" [class.active]="textFormatting.bold" (click)="toggleFormat('bold')" title="Bold (Ctrl+B)">
           <span class="icon bold-icon">B</span>
         </button>
-        <button class="toolbar-button" [class.active]="textFormatting.italic" (click)="toggleFormat('italic')">
+        <button class="toolbar-button" [class.active]="textFormatting.italic" (click)="toggleFormat('italic')" title="Italic (Ctrl+I)">
           <span class="icon italic-icon">I</span>
         </button>
-        <button class="toolbar-button" [class.active]="textFormatting.underline" (click)="toggleFormat('underline')">
+        <button class="toolbar-button" [class.active]="textFormatting.underline" (click)="toggleFormat('underline')" title="Underline (Ctrl+U)">
           <span class="icon underline-icon">U</span>
         </button>
         <div class="toolbar-separator"></div>
+        
+        <!-- Enhanced font dropdown -->
         <div class="dropdown">
           <button class="toolbar-button dropdown-toggle">
-            <span class="current-font">{{ selectedFont }}</span>
+            <span class="current-font" [style.fontFamily]="selectedFont">{{ selectedFont }}</span>
           </button>
           <div class="dropdown-content">
-            <div class="dropdown-item" *ngFor="let font of availableFonts" (click)="selectFont(font)">{{ font }}</div>
+            <div class="dropdown-item" 
+                 *ngFor="let font of availableFonts" 
+                 [attr.data-font]="font"
+                 [style.fontFamily]="font"
+                 (click)="selectFont(font)">
+              {{ font }}
+            </div>
           </div>
         </div>
+        
+        <!-- Enhanced font size dropdown -->
         <div class="dropdown">
           <button class="toolbar-button dropdown-toggle">
-            <span class="current-size">{{ selectedFontSize }}</span>
+            <span class="current-size font-size-display">{{ selectedFontSize }}</span>
           </button>
           <div class="dropdown-content">
-            <div class="dropdown-item" *ngFor="let size of fontSizes" (click)="selectFontSize(size)">{{ size }}</div>
+            <div class="dropdown-item" *ngFor="let size of fontSizes" (click)="selectFontSize(size)">
+              <span class="font-size-display">{{ size }}</span>
+            </div>
           </div>
         </div>
+        
         <div class="toolbar-separator"></div>
-        <button class="toolbar-button" [class.active]="textAlignment === 'left'" (click)="setAlignment('left')">
+        
+        <!-- Alignment controls -->
+        <button class="toolbar-button" [class.active]="textAlignment === 'left'" (click)="setAlignment('left')" title="Align Left">
           <span class="icon align-left-icon">⟨</span>
         </button>
-        <button class="toolbar-button" [class.active]="textAlignment === 'center'" (click)="setAlignment('center')">
+        <button class="toolbar-button" [class.active]="textAlignment === 'center'" (click)="setAlignment('center')" title="Align Center">
           <span class="icon align-center-icon">⟺</span>
         </button>
-        <button class="toolbar-button" [class.active]="textAlignment === 'right'" (click)="setAlignment('right')">
+        <button class="toolbar-button" [class.active]="textAlignment === 'right'" (click)="setAlignment('right')" title="Align Right">
           <span class="icon align-right-icon">⟩</span>
         </button>
-        <button class="toolbar-button" [class.active]="textAlignment === 'justify'" (click)="setAlignment('justify')">
+        <button class="toolbar-button" [class.active]="textAlignment === 'justify'" (click)="setAlignment('justify')" title="Justify">
           <span class="icon align-justify-icon">≡</span>
         </button>
       </div>
+      
       <div class="toolbar-separator vertical"></div>
+      
+      <!-- Color controls -->
       <div class="toolbar-section colors">
         <div class="color-picker">
           <span class="color-label">Text:</span>
@@ -57,8 +82,27 @@
           <input type="color" [(ngModel)]="highlightColor" (change)="applyHighlightColor()">
         </div>
       </div>
+      
+      <div class="toolbar-separator vertical"></div>
+      
+      <!-- New paragraph controls -->
+      <div class="toolbar-section paragraph">
+        <button class="toolbar-button" (click)="increaseIndent()" title="Increase Indent">
+          <span class="icon">→</span>
+        </button>
+        <button class="toolbar-button" (click)="decreaseIndent()" title="Decrease Indent">
+          <span class="icon">←</span>
+        </button>
+        <button class="toolbar-button" (click)="toggleBulletList()" title="Bullet List">
+          <span class="icon">•</span>
+        </button>
+        <button class="toolbar-button" (click)="toggleNumberedList()" title="Numbered List">
+          <span class="icon">1.</span>
+        </button>
+      </div>
     </div>
 
+    <!-- Enhanced sidebar with better visuals -->
     <div class="sidebar">
       <div class="sidebar-title">Insert</div>
       <div class="sidebar-items">
@@ -86,15 +130,24 @@
           <span class="sidebar-icon">↲</span>
           <span class="sidebar-label">Page Break</span>
         </div>
+        <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'checkbox')">
+          <span class="sidebar-icon">☑</span>
+          <span class="sidebar-label">Checkbox</span>
+        </div>
+        <div class="sidebar-item" draggable="true" (dragstart)="onDragStart($event, 'dropdown')">
+          <span class="sidebar-icon">▼</span>
+          <span class="sidebar-label">Dropdown</span>
+        </div>
       </div>
     </div>
 
+    <!-- Improved document area -->
     <div class="document-area">
       <div class="document-page" *ngFor="let page of pages; let i = index" [attr.data-page]="i + 1">
         <div class="page-content" 
              (dragover)="allowDrop($event)" 
              (drop)="onDrop($event, i)">
-          <!-- Page content will be dynamically added here -->
+          
           <ng-container *ngFor="let element of page.elements">
             <div class="form-element" 
                  [attr.data-type]="element.type" 
@@ -103,13 +156,19 @@
                  [style.top.px]="element.y"
                  [style.width.px]="element.width || 'auto'"
                  [style.height.px]="element.height || 'auto'"
-                 (mousedown)="startDrag($event, element)">
+                 [class.selected]="selectedElement?.id === element.id"
+                 (mousedown)="startDrag($event, element)"
+                 (click)="selectElement(element)">
               
-              <!-- Text element -->
               <!-- Text element -->
               <div *ngIf="element.type === 'text'" 
                    class="text-element" 
                    [attr.contenteditable]="true"
+                   [style.fontFamily]="element.fontFamily || selectedFont"
+                   [style.fontSize.px]="element.fontSize || selectedFontSize"
+                   [style.color]="element.color || textColor"
+                   [style.backgroundColor]="element.backgroundColor || 'transparent'"
+                   [style.textAlign]="element.textAlign || textAlignment"
                    (focus)="onTextFocus($event, i, element)"
                    (blur)="onTextBlur($event, i, element)">
               </div>
@@ -120,26 +179,32 @@
                    [alt]="element.alt || 'Image'"
                    class="image-element">
               
-              <!-- Table element -->
+              <!-- Table element with improved styling -->
               <table *ngIf="element.type === 'table'" class="table-element">
                 <tr *ngFor="let row of element.rows; let rowIndex = index">
-                  <!-- Table cell -->
                   <td *ngFor="let cell of row; let cellIndex = index" 
                       [attr.contenteditable]="true"
+                      [style.fontFamily]="cell.fontFamily || element.fontFamily || selectedFont"
+                      [style.fontSize.px]="cell.fontSize || element.fontSize || selectedFontSize"
+                      [style.color]="cell.color || element.color || textColor"
+                      [style.backgroundColor]="cell.backgroundColor || element.backgroundColor || 'transparent'"
+                      [style.textAlign]="cell.textAlign || element.textAlign || textAlignment"
                       (focus)="onTableCellFocus($event, i, element, rowIndex, cellIndex)"
                       (blur)="onTableCellBlur($event, i, element, rowIndex, cellIndex)">
                   </td>
                 </tr>
               </table>
               
-              <!-- Shape element -->
+              <!-- Shape element with improved styling -->
               <div *ngIf="element.type === 'shape'" 
                    class="shape-element"
-                   [ngClass]="element.shape">
+                   [ngClass]="element.shape"
+                   [style.backgroundColor]="element.color || 'rgba(200, 200, 200, 0.2)'">
               </div>
               
               <!-- Horizontal Line element -->
-              <div *ngIf="element.type === 'horizontalLine'" class="horizontal-line-element">
+              <div *ngIf="element.type === 'horizontalLine'" class="horizontal-line-element"
+                   [style.backgroundColor]="element.color || '#333'">
               </div>
               
               <!-- Page break element -->
@@ -148,10 +213,32 @@
                 <div class="page-break-text">Page Break</div>
               </div>
               
+              <!-- New checkbox element -->
+              <div *ngIf="element.type === 'checkbox'" class="checkbox-element">
+                <input type="checkbox" [checked]="element.checked" (change)="toggleCheckbox(i, element)">
+                <span class="checkbox-label" [attr.contenteditable]="true"
+                      [style.fontFamily]="element.fontFamily || selectedFont"
+                      [style.fontSize.px]="element.fontSize || selectedFontSize"
+                      [style.color]="element.color || textColor">
+                  {{element.label || 'Checkbox label'}}
+                </span>
+              </div>
+              
+              <!-- New dropdown element -->
+              <div *ngIf="element.type === 'dropdown'" class="dropdown-element">
+                <select [style.fontFamily]="element.fontFamily || selectedFont"
+                        [style.fontSize.px]="element.fontSize || selectedFontSize"
+                        [style.color]="element.color || textColor">
+                  <option *ngFor="let option of element.options || ['Option 1', 'Option 2', 'Option 3']">
+                    {{option}}
+                  </option>
+                </select>
+              </div>
+              
               <!-- Element controls -->
               <div class="element-controls">
-                <button class="control-button delete" (click)="deleteElement(i, element)">✕</button>
-                <button class="control-button resize" (mousedown)="startResize($event, element)">↘</button>
+                <button class="control-button delete" (click)="deleteElement(i, element)" title="Delete">✕</button>
+                <button class="control-button resize" (mousedown)="startResize($event, element)" title="Resize">↘</button>
               </div>
             </div>
           </ng-container>
@@ -159,6 +246,7 @@
       </div>
     </div>
 
+    <!-- Page controls with improved styling -->
     <div class="page-controls">
       <button class="page-control-button" (click)="addNewPage()">Add Page</button>
       <div class="page-indicators">
@@ -171,9 +259,33 @@
       </div>
     </div>
 
+    <!-- Export controls with improved styling -->
     <div class="export-controls">
       <button class="export-button" (click)="exportToPdf()">Export to PDF</button>
-      <button class="save-button" (click)="saveForm()">Save Form</button>
+      <button class="save-button" [disabled]="isSaving" (click)="saveForm()">
+        <span *ngIf="!isSaving">Save Document</span>
+        <span *ngIf="isSaving">Saving...</span>
+      </button>
+    </div>
+    
+    <!-- Word-like status bar -->
+    <div class="status-bar">
+      <div class="status-left">
+        <div class="status-item">
+          <span>Page {{ currentPage + 1 }} of {{ pages.length }}</span>
+        </div>
+        <div class="status-item">
+          <span>{{ selectedElement ? selectedElement.type.charAt(0).toUpperCase() + selectedElement.type.slice(1) + ' selected' : 'No selection' }}</span>
+        </div>
+      </div>
+      <div class="status-right">
+        <div class="zoom-controls">
+          <button class="zoom-button" (click)="zoomOut()" title="Zoom Out (Ctrl+-)">-</button>
+          <span class="zoom-level">{{ zoomLevel }}%</span>
+          <button class="zoom-button" (click)="zoomIn()" title="Zoom In (Ctrl+)">+</button>
+          <button class="zoom-button" (click)="resetZoom()" title="Reset Zoom (Ctrl+0)">Reset</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

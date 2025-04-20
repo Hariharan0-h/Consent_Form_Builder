@@ -28,41 +28,41 @@ export class PatientScreenComponent implements AfterViewInit {
   
   patients: Patient[] = [
     {
-      name: 'John Smith',
+      name: 'John Cena',
       age: 45,
-      address: '123 Main St, New York, NY',
-      surgery: 'Knee Replacement',
+      address: 'Madurai 28, Aarapalayam',
+      surgery: 'RE Lens Replacement',
       date: new Date(2025, 3, 25),
       gender: 'Male'
     },
     {
-      name: 'Sarah Johnson',
+      name: 'Ajith Kumar',
       age: 32,
-      address: '456 Park Ave, Boston, MA',
+      address: 'Maatuthavani, Main Road, 45',
       surgery: 'Appendectomy',
       date: new Date(2025, 3, 28),
-      gender: 'Female'
+      gender: 'Male'
     },
     {
-      name: 'Michael Brown',
+      name: 'Michael Jackson',
       age: 58,
-      address: '789 Oak Dr, Chicago, IL',
-      surgery: 'Hip Replacement',
+      address: 'New Delhi',
+      surgery: 'Lens Replacement BE',
       date: new Date(2025, 4, 3),
       gender: 'Male'
     },
     {
-      name: 'Emma Wilson',
+      name: 'Anushka',
       age: 29,
-      address: '234 Elm St, San Francisco, CA',
-      surgery: 'Tonsillectomy',
+      address: 'Pallavaram, Chennai',
+      surgery: 'Retinopathy',
       date: new Date(2025, 4, 10),
       gender: 'Female'
     },
     {
-      name: 'Robert Garcia',
+      name: 'MS Dhoni',
       age: 51,
-      address: '567 Pine Rd, Miami, FL',
+      address: 'Chepauk, Madras',
       surgery: 'Cataract Surgery',
       date: new Date(2025, 4, 15),
       uin: 'AEH2025105',
@@ -97,7 +97,7 @@ export class PatientScreenComponent implements AfterViewInit {
     this.showModal = true;
     
     // Use the specific API endpoint provided
-    const endpoint = 'https://localhost:7073/api/models/1';
+    const endpoint = 'https://localhost:7073/api/models/6';
     
     this.http.get(endpoint, { responseType: 'text' }).subscribe({
       next: (htmlContent) => {
